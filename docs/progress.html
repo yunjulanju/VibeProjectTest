@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>UE5 Auth HTTP Client — 진행사항</title>
+<style>
+  :root {
+    --bg:#f6f7f9; --surface:#fff; --surface-2:#eef1f5; --border:#dde2ea;
+    --text:#1b2431; --muted:#5b6676; --accent:#2f5fe0; --accent-soft:rgba(47,95,224,.10);
+    --ok:#1f9d55; --ok-soft:rgba(31,157,85,.12); --warn:#a86616; --warn-soft:rgba(168,102,22,.12);
+    --danger:#c0392b; --danger-soft:rgba(192,57,43,.12);
+    --font-sans:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans KR",sans-serif;
+    --font-mono:ui-monospace,"Cascadia Code","Consolas",monospace;
+    --shadow:0 1px 2px rgba(16,21,31,.04),0 4px 16px rgba(16,21,31,.05);
+  }
+  @media (prefers-color-scheme:dark){
+    :root{ --bg:#0e1117; --surface:#161b24; --surface-2:#1d232e; --border:#2a323f;
+      --text:#e6ebf2; --muted:#97a2b2; --accent:#6f92ff; --accent-soft:rgba(111,146,255,.14);
+      --ok:#48c78e; --ok-soft:rgba(72,199,142,.14); --warn:#e0a53d; --warn-soft:rgba(224,165,61,.13);
+      --danger:#f2735f; --danger-soft:rgba(242,115,95,.14);
+      --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 20px rgba(0,0,0,.35); }
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font-sans);line-height:1.6;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:860px;margin:0 auto;padding:clamp(1.5rem,4vw,4rem) clamp(1rem,4vw,2rem) 4rem;}
+  header{border-bottom:1px solid var(--border);padding-bottom:1.75rem;margin-bottom:2rem;}
+  .eyebrow{font-family:var(--font-mono);font-size:.72rem;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);margin:0 0 .75rem;}
+  h1{font-size:clamp(1.9rem,5vw,2.6rem);line-height:1.1;letter-spacing:-.02em;margin:0 0 .6rem;}
+  .lede{color:var(--muted);font-size:1.05rem;margin:0 0 1.25rem;max-width:60ch;}
+  .chips{display:flex;flex-wrap:wrap;gap:.5rem;}
+  .chip{font-family:var(--font-mono);font-size:.78rem;padding:.28rem .65rem;border-radius:6px;background:var(--surface-2);border:1px solid var(--border);}
+  .badge{display:inline-flex;align-items:center;gap:.4rem;font-family:var(--font-mono);font-size:.8rem;padding:.35rem .7rem;border-radius:6px;background:var(--warn-soft);color:var(--warn);border:1px solid var(--warn);margin-bottom:1.25rem;}
+  section{margin-bottom:2.5rem;}
+  h2{font-size:1.25rem;letter-spacing:-.01em;margin:0 0 1.1rem;padding-bottom:.5rem;border-bottom:1px solid var(--border);}
+  h2 .idx{font-family:var(--font-mono);color:var(--accent);font-size:.9rem;margin-right:.55rem;}
+  .table-scroll{overflow-x:auto;border:1px solid var(--border);border-radius:10px;}
+  table{border-collapse:collapse;width:100%;font-size:.9rem;min-width:420px;}
+  thead th{text-align:left;font-family:var(--font-mono);font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:.7rem 1rem;background:var(--surface-2);border-bottom:1px solid var(--border);}
+  tbody td{padding:.7rem 1rem;border-bottom:1px solid var(--border);vertical-align:middle;}
+  tbody tr:last-child td{border-bottom:none;}
+  td code,.path{font-family:var(--font-mono);font-size:.85rem;}
+  .verb{font-family:var(--font-mono);font-size:.72rem;font-weight:600;padding:.2rem .5rem;border-radius:5px;}
+  .verb.get{color:var(--accent);background:var(--accent-soft);}
+  .verb.post{color:var(--ok);background:var(--ok-soft);}
+  .verb.delete{color:var(--danger);background:var(--danger-soft);}
+  .lock{color:var(--muted);font-size:.8rem;font-family:var(--font-mono);}
+  ul.steps{list-style:none;padding:0;margin:0;display:grid;gap:.55rem;}
+  ul.steps li{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:.7rem .95rem;font-size:.92rem;display:flex;gap:.6rem;align-items:flex-start;}
+  ul.steps li .mark{font-family:var(--font-mono);font-weight:700;}
+  li.done .mark{color:var(--ok);}
+  li.todo .mark{color:var(--muted);}
+  li.done{opacity:.85;}
+  .decisions{display:grid;gap:.7rem;}
+  .decision{display:grid;grid-template-columns:minmax(110px,150px) 1fr;gap:1rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:.85rem 1.1rem;}
+  .decision dt{font-family:var(--font-mono);font-size:.8rem;color:var(--muted);align-self:center;}
+  .decision dd{margin:0;font-size:.93rem;}
+  .decision dd strong{font-weight:640;}
+  code.inline{font-family:var(--font-mono);background:var(--surface-2);border:1px solid var(--border);border-radius:4px;padding:.05rem .35rem;font-size:.85rem;}
+  footer{margin-top:3rem;padding-top:1.5rem;border-top:1px solid var(--border);color:var(--muted);font-size:.82rem;font-family:var(--font-mono);display:flex;flex-wrap:wrap;gap:.5rem 1.25rem;justify-content:space-between;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <p class="eyebrow">Progress · 2026-07-15</p>
+    <h1>UE5 Auth HTTP Client — 진행사항</h1>
+    <p class="lede">UE5 클라이언트에서 FastAPI 인증 서버(<code class="inline">http://localhost:8000</code>)와 HTTP·JSON 통신을 구현하는 작업. 회원가입 · 로그인 · 내 정보 · 회원탈퇴 · 헬스체크.</p>
+    <div class="badge">● 현재 단계: C++ 소스 구현 완료 (Task 1~6) → 사용자 환경 빌드·검증 대기</div>
+    <div class="chips">
+      <span class="chip">UE 5.7</span>
+      <span class="chip">Blueprint-only → C++ 모듈 추가</span>
+      <span class="chip">HttpModule</span>
+      <span class="chip">JWT Bearer</span>
+    </div>
+  </header>
+
+  <section>
+    <h2><span class="idx">01</span>확정된 결정</h2>
+    <dl class="decisions">
+      <div class="decision"><dt>구현 방식</dt><dd><strong>C++ 게임 모듈 신설</strong> 후 UE <code class="inline">HttpModule</code> 사용 (BP 기본 HTTP 노드 없음)</dd></div>
+      <div class="decision"><dt>범위</dt><dd><strong>5개 엔드포인트 전부</strong> — signup / login / GET me / DELETE me / health</dd></div>
+      <div class="decision"><dt>사용 방식</dt><dd><strong>C++ 전용</strong>, BP 노출 안 함. 콘솔 명령 + 로그로 테스트</dd></div>
+      <div class="decision"><dt>Base URL</dt><dd>기본값 <code class="inline">http://localhost:8000</code> (변경 가능)</dd></div>
+    </dl>
+  </section>
+
+  <section>
+    <h2><span class="idx">02</span>대상 서버 엔드포인트</h2>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>메서드</th><th>경로</th><th>인증</th><th>성공</th></tr></thead>
+        <tbody>
+          <tr><td><span class="verb post">POST</span></td><td class="path">/auth/signup</td><td class="lock">—</td><td class="path">201 / 409</td></tr>
+          <tr><td><span class="verb post">POST</span></td><td class="path">/auth/login</td><td class="lock">—</td><td class="path">200 → token</td></tr>
+          <tr><td><span class="verb get">GET</span></td><td class="path">/users/me</td><td class="lock">Bearer</td><td class="path">200 / 401</td></tr>
+          <tr><td><span class="verb delete">DELETE</span></td><td class="path">/users/me</td><td class="lock">Bearer</td><td class="path">204 / 401</td></tr>
+          <tr><td><span class="verb get">GET</span></td><td class="path">/health</td><td class="lock">—</td><td class="path">200</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="idx">03</span>설계 요약</h2>
+    <ul class="steps">
+      <li><span class="mark">▹</span><div>신규 C++ 모듈 <code class="inline">Source/VibeProjectTest/</code> — Build.cs 의존성 <code class="inline">HTTP</code>, <code class="inline">Json</code>, <code class="inline">JsonUtilities</code>. <code class="inline">.uproject</code>에 Modules 등록</div></li>
+      <li><span class="mark">▹</span><div>핵심 클래스 <code class="inline">UAuthSubsystem : UGameInstanceSubsystem</code> — 상태 <code class="inline">BaseUrl</code>, <code class="inline">AccessToken</code></div></li>
+      <li><span class="mark">▹</span><div>메서드 <code class="inline">Health / Signup / Login / GetMe / DeleteMe</code> — 로그인 시 토큰 저장, 보호 요청에 <code class="inline">Authorization: Bearer</code> 자동 첨부</div></li>
+      <li><span class="mark">▹</span><div>테스트용 콘솔 명령 <code class="inline">Auth.Health</code>, <code class="inline">Auth.Login &lt;email&gt; &lt;pw&gt;</code> 등 — 결과는 <code class="inline">LogAuth</code> 로그로 출력</div></li>
+    </ul>
+  </section>
+
+  <section>
+    <h2><span class="idx">04</span>남은 작업</h2>
+    <ul class="steps">
+      <li class="done"><span class="mark">✓</span><div>프로젝트 구조 파악 · 설계(브레인스토밍) · 스펙 문서 작성</div></li>
+      <li class="done"><span class="mark">✓</span><div>구현 계획(writing-plans) 작성</div></li>
+      <li class="done"><span class="mark">✓</span><div>C++ 모듈 스캐폴딩 (Target.cs · Build.cs · 모듈 진입점 · <code class="inline">.uproject</code> 수정)</div></li>
+      <li class="done"><span class="mark">✓</span><div><code class="inline">UAuthSubsystem</code> 구현 (요청 헬퍼 + 5개 메서드 + 토큰 관리)</div></li>
+      <li class="done"><span class="mark">✓</span><div><code class="inline">Auth.*</code> 콘솔 명령 등록</div></li>
+      <li class="todo"><span class="mark">☐</span><div><strong>(사용자)</strong> Visual Studio + UE5.7 빌드 → 서버 띄우고 콘솔 명령으로 검증</div></li>
+    </ul>
+  </section>
+
+  <footer>
+    <span>상세 설계: docs/superpowers/specs/2026-07-15-ue5-auth-http-client-design.md</span>
+    <span>빌드는 VS C++ + UE5.7 환경 필요</span>
+  </footer>
+</div>
+</body>
+</html>
