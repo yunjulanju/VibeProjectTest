@@ -127,4 +127,17 @@ void UAuthSubsystem::GetMe(FAuthCallback OnDone)
 {
 	SendRequest(TEXT("/users/me"), TEXT("GET"), FString(), /*bAuth=*/true, MoveTemp(OnDone));
 }
-void UAuthSubsystem::DeleteMe(FAuthCallback OnDone) {}
+void UAuthSubsystem::DeleteMe(FAuthCallback OnDone)
+{
+	FAuthCallback Wrapped = [this, OnDone](bool bSuccess, int32 Code, const FString& Content)
+	{
+		if (bSuccess)
+		{
+			ClearToken();
+			UE_LOG(LogAuth, Log, TEXT("회원탈퇴 완료 — 토큰 클리어됨"));
+		}
+		if (OnDone) { OnDone(bSuccess, Code, Content); }
+	};
+
+	SendRequest(TEXT("/users/me"), TEXT("DELETE"), FString(), /*bAuth=*/true, MoveTemp(Wrapped));
+}
