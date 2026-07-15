@@ -6,7 +6,7 @@ public class VibeProjectTestEditorTarget : TargetRules
 	public VibeProjectTestEditorTarget(TargetInfo Target) : base(Target)
 	{
 		Type = TargetType.Editor;
-		DefaultBuildSettings = BuildSettingsVersion.V5;
+		DefaultBuildSettings = BuildSettingsVersion.V6;
 		IncludeOrderVersion = EngineIncludeOrderVersion.Latest;
 		ExtraModuleNames.Add("VibeProjectTest");
 	}
