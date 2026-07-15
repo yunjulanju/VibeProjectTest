@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>UE5 Auth HTTP Client — 정리</title>
+<style>
+  :root {
+    --bg:#f6f7f9; --surface:#fff; --surface-2:#eef1f5; --border:#dde2ea;
+    --text:#1b2431; --muted:#5b6676; --accent:#2f5fe0; --accent-soft:rgba(47,95,224,.10);
+    --ok:#1f9d55; --ok-soft:rgba(31,157,85,.12); --warn:#a86616; --warn-soft:rgba(168,102,22,.12);
+    --danger:#c0392b; --danger-soft:rgba(192,57,43,.12);
+    --code-bg:#10151f; --code-text:#dfe6f2; --code-muted:#7f8ea8;
+    --font-sans:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans KR",sans-serif;
+    --font-mono:ui-monospace,"Cascadia Code","Consolas",monospace;
+    --shadow:0 1px 2px rgba(16,21,31,.04),0 4px 16px rgba(16,21,31,.05);
+  }
+  @media (prefers-color-scheme:dark){
+    :root{ --bg:#0e1117; --surface:#161b24; --surface-2:#1d232e; --border:#2a323f;
+      --text:#e6ebf2; --muted:#97a2b2; --accent:#6f92ff; --accent-soft:rgba(111,146,255,.14);
+      --ok:#48c78e; --ok-soft:rgba(72,199,142,.14); --warn:#e0a53d; --warn-soft:rgba(224,165,61,.13);
+      --danger:#f2735f; --danger-soft:rgba(242,115,95,.14);
+      --code-bg:#0a0e15; --code-text:#dfe6f2; --code-muted:#6b7a95;
+      --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 20px rgba(0,0,0,.35); }
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font-sans);line-height:1.6;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:880px;margin:0 auto;padding:clamp(1.5rem,4vw,4rem) clamp(1rem,4vw,2rem) 4rem;}
+  header{border-bottom:1px solid var(--border);padding-bottom:1.75rem;margin-bottom:2rem;}
+  .eyebrow{font-family:var(--font-mono);font-size:.72rem;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);margin:0 0 .75rem;}
+  h1{font-size:clamp(1.9rem,5vw,2.6rem);line-height:1.1;letter-spacing:-.02em;margin:0 0 .6rem;}
+  .lede{color:var(--muted);font-size:1.05rem;margin:0 0 1.25rem;max-width:64ch;}
+  .chips{display:flex;flex-wrap:wrap;gap:.5rem;}
+  .chip{font-family:var(--font-mono);font-size:.78rem;padding:.28rem .65rem;border-radius:6px;background:var(--surface-2);border:1px solid var(--border);}
+  section{margin-bottom:2.5rem;}
+  h2{font-size:1.25rem;letter-spacing:-.01em;margin:0 0 1.1rem;padding-bottom:.5rem;border-bottom:1px solid var(--border);}
+  h2 .idx{font-family:var(--font-mono);color:var(--accent);font-size:.9rem;margin-right:.55rem;}
+  p{margin:0 0 1rem;}
+  .muted{color:var(--muted);font-size:.95rem;}
+  .flow{font-family:var(--font-mono);font-size:.82rem;line-height:1.8;background:var(--code-bg);color:var(--code-text);border:1px solid var(--border);border-radius:10px;padding:1.1rem 1.25rem;overflow-x:auto;}
+  .table-scroll{overflow-x:auto;border:1px solid var(--border);border-radius:10px;margin-bottom:1rem;}
+  table{border-collapse:collapse;width:100%;font-size:.9rem;min-width:460px;}
+  thead th{text-align:left;font-family:var(--font-mono);font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:.7rem 1rem;background:var(--surface-2);border-bottom:1px solid var(--border);}
+  tbody td{padding:.65rem 1rem;border-bottom:1px solid var(--border);vertical-align:top;}
+  tbody tr:last-child td{border-bottom:none;}
+  td code,.path{font-family:var(--font-mono);font-size:.85rem;}
+  .verb{font-family:var(--font-mono);font-size:.72rem;font-weight:600;padding:.2rem .5rem;border-radius:5px;}
+  .verb.get{color:var(--accent);background:var(--accent-soft);}
+  .verb.post{color:var(--ok);background:var(--ok-soft);}
+  .verb.delete{color:var(--danger);background:var(--danger-soft);}
+  .lock{color:var(--muted);font-size:.8rem;font-family:var(--font-mono);}
+  pre{background:var(--code-bg);color:var(--code-text);font-family:var(--font-mono);font-size:.82rem;line-height:1.7;padding:1.1rem 1.25rem;border-radius:10px;overflow-x:auto;margin:0 0 1rem;border:1px solid var(--border);}
+  pre .c{color:var(--code-muted);}
+  pre .k{color:#c792ea;}
+  pre .a{color:#8fb3ff;}
+  pre .s{color:#c3e88d;}
+  code.inline{font-family:var(--font-mono);background:var(--surface-2);border:1px solid var(--border);border-radius:4px;padding:.05rem .35rem;font-size:.85rem;}
+  ol.flowlist{margin:0 0 1rem;padding-left:1.3rem;}
+  ol.flowlist li{margin-bottom:.4rem;font-size:.95rem;}
+  .callout{display:flex;gap:.85rem;background:var(--accent-soft);border:1px solid var(--accent);border-radius:10px;padding:.9rem 1.15rem;font-size:.9rem;margin-bottom:1rem;}
+  .callout .ico{color:var(--accent);font-weight:700;font-family:var(--font-mono);}
+  .pill{display:inline-block;font-family:var(--font-mono);font-size:.72rem;padding:.15rem .5rem;border-radius:5px;}
+  .pill.ok{color:var(--ok);background:var(--ok-soft);}
+  .pill.todo{color:var(--warn);background:var(--warn-soft);}
+  .pill.no{color:var(--danger);background:var(--danger-soft);}
+  footer{margin-top:3rem;padding-top:1.5rem;border-top:1px solid var(--border);color:var(--muted);font-size:.82rem;font-family:var(--font-mono);display:flex;flex-wrap:wrap;gap:.5rem 1.25rem;}
+  footer a{color:var(--accent);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <p class="eyebrow">UE5 Summary · 2026-07-15</p>
+    <h1>UE5 Auth HTTP Client</h1>
+    <p class="lede">Unreal Engine 5.7 프로젝트 <code class="inline">VibeProjectTest</code>에 추가한 인증 서버 HTTP 통신 클라이언트. FastAPI 백엔드(<code class="inline">http://localhost:8000</code>)와 JSON으로 통신하고, JWT 토큰을 보관해 보호된 요청에 자동 첨부한다.</p>
+    <div class="chips">
+      <span class="chip">UE 5.7</span>
+      <span class="chip">Blueprint-only → C++ 모듈</span>
+      <span class="chip">HttpModule</span>
+      <span class="chip">Json / JsonUtilities</span>
+      <span class="chip">JWT Bearer</span>
+    </div>
+  </header>
+
+  <section>
+    <h2><span class="idx">01</span>아키텍처</h2>
+    <div class="flow">UE 콘솔 (Auth.*)  ──►  UAuthSubsystem  ──►  FHttpModule  ──►  FastAPI (localhost:8000)
+                          │  AccessToken 보관
+                          └─ 보호 요청에 Authorization: Bearer 자동 첨부</div>
+    <p class="muted"><strong>UAuthSubsystem</strong>(<code class="inline">UGameInstanceSubsystem</code>) 하나가 게임 인스턴스 수명 동안 인증 상태를 관리한다. 공통 헬퍼 <code class="inline">SendRequest()</code>가 요청 구성·비동기 전송·상태코드 분기를 담당하고, 콘솔 명령이 각 엔드포인트를 <code class="inline">~</code> 콘솔에서 호출한다.</p>
+  </section>
+
+  <section>
+    <h2><span class="idx">02</span>파일 구성</h2>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>파일</th><th>역할</th></tr></thead>
+        <tbody>
+          <tr><td class="path">Source/VibeProjectTest.Target.cs</td><td>Game 빌드 타깃 (BuildSettingsVersion.V6)</td></tr>
+          <tr><td class="path">Source/VibeProjectTestEditor.Target.cs</td><td>Editor 빌드 타깃</td></tr>
+          <tr><td class="path">.../VibeProjectTest.Build.cs</td><td>모듈 의존성: HTTP, Json, JsonUtilities</td></tr>
+          <tr><td class="path">.../VibeProjectTest.h / .cpp</td><td>primary game module 진입점</td></tr>
+          <tr><td class="path">.../Auth/AuthSubsystem.h / .cpp</td><td><strong>핵심 — 인증 서브시스템</strong></td></tr>
+          <tr><td class="path">.../Auth/AuthConsoleCommands.cpp</td><td>Auth.* 콘솔 명령 등록</td></tr>
+          <tr><td class="path">VibeProjectTest.uproject</td><td>Modules에 런타임 모듈 등록</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout"><span class="ico">i</span><div>같은 <code class="inline">Auth/</code> 폴더 내 <code class="inline">.cpp</code>는 헤더를 <code class="inline">#include "AuthSubsystem.h"</code>(접두사 없이)로 참조 — 플랫 모듈 구조에서 C1083 오류 방지.</div></div>
+  </section>
+
+  <section>
+    <h2><span class="idx">03</span>UAuthSubsystem API</h2>
+    <pre><span class="c">// 상태</span>
+<span class="k">void</span>            SetBaseUrl(<span class="k">const</span> FString&amp; InUrl);   <span class="c">// 기본 http://localhost:8000</span>
+<span class="k">const</span> FString&amp;  GetBaseUrl() <span class="k">const</span>;
+<span class="k">bool</span>            IsLoggedIn() <span class="k">const</span>;                 <span class="c">// AccessToken 보유 여부</span>
+<span class="k">void</span>            ClearToken();
+
+<span class="c">// 엔드포인트 (모두 비동기, 완료 시 콜백 호출)</span>
+<span class="k">void</span> Health  (FAuthCallback OnDone = {});
+<span class="k">void</span> Signup  (Email, Username, Password, FAuthCallback OnDone = {});
+<span class="k">void</span> Login   (Email, Password, FAuthCallback OnDone = {});   <span class="c">// 성공 시 access_token 저장</span>
+<span class="k">void</span> GetMe   (FAuthCallback OnDone = {});                    <span class="c">// Bearer 자동 첨부</span>
+<span class="k">void</span> DeleteMe(FAuthCallback OnDone = {});                    <span class="c">// 성공 시 토큰 클리어</span>
+
+<span class="c">// 콜백 시그니처</span>
+<span class="k">using</span> FAuthCallback = TFunction&lt;<span class="k">void</span>(<span class="k">bool</span> bSuccess, <span class="k">int32</span> StatusCode, <span class="k">const</span> FString&amp; Content)&gt;;</pre>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>메서드</th><th>HTTP</th><th>경로</th><th>인증</th><th>성공</th></tr></thead>
+        <tbody>
+          <tr><td class="path">Health</td><td><span class="verb get">GET</span></td><td class="path">/health</td><td class="lock">—</td><td class="path">200</td></tr>
+          <tr><td class="path">Signup</td><td><span class="verb post">POST</span></td><td class="path">/auth/signup</td><td class="lock">—</td><td class="path">201 / 409</td></tr>
+          <tr><td class="path">Login</td><td><span class="verb post">POST</span></td><td class="path">/auth/login</td><td class="lock">—</td><td class="path">200 → token</td></tr>
+          <tr><td class="path">GetMe</td><td><span class="verb get">GET</span></td><td class="path">/users/me</td><td class="lock">Bearer</td><td class="path">200 / 401</td></tr>
+          <tr><td class="path">DeleteMe</td><td><span class="verb delete">DELETE</span></td><td class="path">/users/me</td><td class="lock">Bearer</td><td class="path">204 / 401</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="idx">04</span>토큰 흐름</h2>
+    <ol class="flowlist">
+      <li><code class="inline">Login</code> 성공(200) → 응답 JSON의 <code class="inline">access_token</code> 파싱 → <code class="inline">AccessToken</code>에 저장</li>
+      <li>이후 <code class="inline">GetMe</code>/<code class="inline">DeleteMe</code>는 <code class="inline">bAuth=true</code> → <code class="inline">Authorization: Bearer &lt;token&gt;</code> 자동 첨부</li>
+      <li>토큰 없이 보호 요청 호출 시 전송 안 하고 경고 로그 + 실패 콜백</li>
+      <li><code class="inline">DeleteMe</code> 성공(204) → <code class="inline">ClearToken()</code>으로 토큰 제거</li>
+    </ol>
+    <p class="muted">토큰은 메모리에만 보관 (디스크 저장·자동 재로그인은 범위 밖).</p>
+  </section>
+
+  <section>
+    <h2><span class="idx">05</span>C++ 호출 예시</h2>
+    <pre><span class="a">UAuthSubsystem</span>* Auth = GetGameInstance()-&gt;GetSubsystem&lt;<span class="a">UAuthSubsystem</span>&gt;();
+
+Auth-&gt;Login(TEXT(<span class="s">"a@b.com"</span>), TEXT(<span class="s">"pw12345678"</span>),
+    [Auth](<span class="k">bool</span> bOk, <span class="k">int32</span> Code, <span class="k">const</span> FString&amp; Body)
+    {
+        <span class="k">if</span> (bOk)
+        {
+            Auth-&gt;GetMe([](<span class="k">bool</span> bOk2, <span class="k">int32</span> Code2, <span class="k">const</span> FString&amp; Profile)
+            {
+                UE_LOG(LogAuth, Log, TEXT(<span class="s">"프로필: %s"</span>), *Profile);
+            });
+        }
+    });</pre>
+  </section>
+
+  <section>
+    <h2><span class="idx">06</span>콘솔 명령 (테스트)</h2>
+    <p class="muted">Play(PIE) 중 <code class="inline">~</code> 콘솔에서 사용. 결과는 Output Log의 <code class="inline">LogAuth</code>로 출력.</p>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>명령</th><th>동작</th></tr></thead>
+        <tbody>
+          <tr><td class="path">Auth.Health</td><td>GET /health</td></tr>
+          <tr><td class="path">Auth.Signup &lt;email&gt; &lt;username&gt; &lt;password&gt;</td><td>회원가입</td></tr>
+          <tr><td class="path">Auth.Login &lt;email&gt; &lt;password&gt;</td><td>로그인 + 토큰 저장</td></tr>
+          <tr><td class="path">Auth.Me</td><td>내 정보 조회 (Bearer)</td></tr>
+          <tr><td class="path">Auth.Delete</td><td>회원탈퇴 (Bearer)</td></tr>
+          <tr><td class="path">Auth.SetBaseUrl &lt;url&gt;</td><td>Base URL 변경</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="idx">07</span>빌드 &amp; 실행</h2>
+    <p class="muted"><strong>UE 프로젝트 빌드</strong> — <code class="inline">.uproject</code> 우클릭 → Generate Visual Studio project files → sln을 Development Editor로 빌드.</p>
+    <p class="muted"><strong>인증 서버 기동</strong> (별도 프로젝트 <code class="inline">C:\Work\VibeCoding</code>):</p>
+    <pre>cd C:\Work\VibeCoding
+.\.venv\Scripts\uvicorn.exe app.main:app --reload   <span class="c"># http://localhost:8000/docs</span></pre>
+    <p class="muted">uvicorn은 <code class="inline">.venv</code>에 설치돼 있음. 서버는 MySQL(<code class="inline">authdb</code>)에 연결하므로 MySQL 8.4.9가 켜져 있어야 함.</p>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>순서</th><th>명령</th><th>기대</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td class="path">Auth.Health</td><td class="path">✓ 200</td></tr>
+          <tr><td>2</td><td class="path">Auth.Signup a@b.com alice pw12345678</td><td class="path">✓ 201 (재시도 409)</td></tr>
+          <tr><td>3</td><td class="path">Auth.Me (로그인 전)</td><td class="path">토큰 없음 경고</td></tr>
+          <tr><td>4</td><td class="path">Auth.Login a@b.com pw12345678</td><td class="path">✓ 200 + 토큰 저장</td></tr>
+          <tr><td>5</td><td class="path">Auth.Me</td><td class="path">✓ 200 (프로필)</td></tr>
+          <tr><td>6</td><td class="path">Auth.Delete</td><td class="path">✓ 204 + 토큰 클리어</td></tr>
+          <tr><td>7</td><td class="path">Auth.Login (탈퇴 후)</td><td class="path">✗ 401</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="idx">08</span>상태 &amp; 범위</h2>
+    <p>
+      <span class="pill ok">✓ 완료</span> C++ 모듈 추가 · 5개 엔드포인트 · 토큰 관리 · 콘솔 명령 · 빌드 통과<br>
+      <span class="pill todo">☐ 남음</span> 실서버 대상 콘솔 명령 실동작 검증<br>
+      <span class="pill no">✗ 범위 밖</span> BP 노출 노드 · 토큰 영구 저장/자동 재로그인 · refresh token · 테스트 UMG UI
+    </p>
+  </section>
+
+  <footer>
+    <span>설계: docs/superpowers/specs/2026-07-15-ue5-auth-http-client-design.md</span>
+    <span>계획: docs/superpowers/plans/2026-07-15-ue5-auth-http-client.md</span>
+    <span>진행: docs/progress.md · progress.html</span>
+  </footer>
+</div>
+</body>
+</html>
