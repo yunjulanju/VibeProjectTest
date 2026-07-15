@@ -1,6 +1,8 @@
 #include "Auth/AuthSubsystem.h"
 #include "HttpModule.h"
 #include "Interfaces/IHttpResponse.h"
+#include "Dom/JsonObject.h"
+#include "Serialization/JsonSerializer.h"
 
 DEFINE_LOG_CATEGORY(LogAuth);
 
@@ -61,9 +63,25 @@ void UAuthSubsystem::SendRequest(const FString& Path, const FString& Verb, const
 	Request->ProcessRequest();
 }
 
-// 엔드포인트 스텁 — Task 3~5에서 채움.
-void UAuthSubsystem::Health(FAuthCallback OnDone) {}
-void UAuthSubsystem::Signup(const FString& Email, const FString& Username, const FString& Password, FAuthCallback OnDone) {}
+void UAuthSubsystem::Health(FAuthCallback OnDone)
+{
+	SendRequest(TEXT("/health"), TEXT("GET"), FString(), /*bAuth=*/false, MoveTemp(OnDone));
+}
+
+void UAuthSubsystem::Signup(const FString& Email, const FString& Username, const FString& Password, FAuthCallback OnDone)
+{
+	const TSharedRef<FJsonObject> Json = MakeShared<FJsonObject>();
+	Json->SetStringField(TEXT("email"), Email);
+	Json->SetStringField(TEXT("username"), Username);
+	Json->SetStringField(TEXT("password"), Password);
+
+	FString Body;
+	const TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&Body);
+	FJsonSerializer::Serialize(Json, Writer);
+
+	SendRequest(TEXT("/auth/signup"), TEXT("POST"), Body, /*bAuth=*/false, MoveTemp(OnDone));
+}
+
 void UAuthSubsystem::Login(const FString& Email, const FString& Password, FAuthCallback OnDone) {}
 void UAuthSubsystem::GetMe(FAuthCallback OnDone) {}
 void UAuthSubsystem::DeleteMe(FAuthCallback OnDone) {}
