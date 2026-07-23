@@ -26,9 +26,9 @@ void UAuthSubsystem::Deinitialize()
 void UAuthSubsystem::HandleActorsInitialized(const FActorsInitializedParams& Params)
 {
 	UWorld* World = Params.World;
-	if (!World || !World->IsGameWorld())
+	if (!World || !World->IsGameWorld() || World->GetGameInstance() != GetGameInstance())
 	{
-		return; // 에디터 프리뷰 월드 등은 무시
+		return; // 에디터 프리뷰 월드/다른 GameInstance 소유 월드는 무시
 	}
 	// 같은 월드에 대해 (스트리밍 서브레벨 등으로) 중복 호출돼도 한 번만 구독한다.
 	if (World->OnWorldBeginPlay.IsBoundToObject(this))
