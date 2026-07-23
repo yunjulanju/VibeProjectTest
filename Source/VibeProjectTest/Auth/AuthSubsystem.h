@@ -3,6 +3,9 @@
 #include "CoreMinimal.h"
 #include "Subsystems/GameInstanceSubsystem.h"
 #include "Interfaces/IHttpRequest.h"
+
+struct FActorsInitializedParams;
+
 #include "AuthSubsystem.generated.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogAuth, Log, All);
@@ -20,6 +23,10 @@ class VIBEPROJECTTEST_API UAuthSubsystem : public UGameInstanceSubsystem
 	GENERATED_BODY()
 
 public:
+	// --- 서브시스템 수명주기: 월드 BeginPlay에 Auth UI 자동 표시 ---
+	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
+	virtual void Deinitialize() override;
+
 	// --- 설정/상태 ---
 	void SetBaseUrl(const FString& InUrl) { BaseUrl = InUrl; }
 	const FString& GetBaseUrl() const { return BaseUrl; }
@@ -37,6 +44,16 @@ private:
 	/** 공통 요청 헬퍼: URL/Verb/헤더 구성, bAuth면 Bearer 첨부, 비동기 전송 후 콜백. */
 	void SendRequest(const FString& Path, const FString& Verb, const FString& Body, bool bAuth, FAuthCallback OnDone);
 
-	FString BaseUrl = TEXT("http://localhost:8000");
+	/** 게임 월드 액터 초기화 시점을 잡아 그 월드의 BeginPlay 구독으로 넘긴다. */
+	void HandleActorsInitialized(const FActorsInitializedParams& Params);
+	/** 월드 BeginPlay 시점에 Auth 위젯을 생성해 뷰포트에 올린다. */
+	void HandleWorldBeginPlay();
+
+	FDelegateHandle ActorsInitHandle;
+	TWeakObjectPtr<UWorld> PendingWorld;
+	TWeakObjectPtr<class UUserWidget> AuthWidget;
+
+	//Ubuntu IP
+	FString BaseUrl = TEXT("http://192.168.0.108:8000");
 	FString AccessToken;
 };
