@@ -8,7 +8,8 @@ public class VibeProjectTest : ModuleRules
 
 		PublicDependencyModuleNames.AddRange(new string[]
 		{
-			"Core", "CoreUObject", "Engine", "InputCore"
+			"Core", "CoreUObject", "Engine", "InputCore",
+			"UMG", "Slate", "SlateCore", "DeveloperSettings"
 		});
 
 		PrivateDependencyModuleNames.AddRange(new string[]
