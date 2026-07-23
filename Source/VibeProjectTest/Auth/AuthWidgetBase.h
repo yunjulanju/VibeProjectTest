@@ -5,7 +5,7 @@
 #include "AuthWidgetBase.generated.h"
 
 class UButton;
-class UEditableTextBox;
+class UEditableText;
 class UTextBlock;
 class UAuthSubsystem;
 
@@ -22,9 +22,9 @@ protected:
 	virtual void NativeConstruct() override;
 
 	// --- 입력란 (WBP에서 정확한 이름으로 배치) ---
-	UPROPERTY(meta = (BindWidget)) TObjectPtr<UEditableTextBox> EmailBox;
-	UPROPERTY(meta = (BindWidget)) TObjectPtr<UEditableTextBox> UsernameBox;
-	UPROPERTY(meta = (BindWidget)) TObjectPtr<UEditableTextBox> PasswordBox;
+	UPROPERTY(meta = (BindWidget)) TObjectPtr<UEditableText> EmailBox;
+	UPROPERTY(meta = (BindWidget)) TObjectPtr<UEditableText> UsernameBox;
+	UPROPERTY(meta = (BindWidget)) TObjectPtr<UEditableText> PasswordBox;
 
 	// --- 버튼 ---
 	UPROPERTY(meta = (BindWidget)) TObjectPtr<UButton> SignupButton;
