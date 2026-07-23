@@ -6,7 +6,6 @@
 #include "AuthUISettings.h"
 #include "Blueprint/UserWidget.h"
 #include "Engine/World.h"
-#include "Engine/GameInstance.h"
 #include "GameFramework/PlayerController.h"
 
 DEFINE_LOG_CATEGORY(LogAuth);
@@ -31,13 +30,25 @@ void UAuthSubsystem::HandleActorsInitialized(const FActorsInitializedParams& Par
 	{
 		return; // 에디터 프리뷰 월드 등은 무시
 	}
-	PendingWorld = World;
-	World->OnWorldBeginPlay.AddUObject(this, &UAuthSubsystem::HandleWorldBeginPlay);
+	// 같은 월드에 대해 (스트리밍 서브레벨 등으로) 중복 호출돼도 한 번만 구독한다.
+	if (World->OnWorldBeginPlay.IsBoundToObject(this))
+	{
+		return;
+	}
+	// 이벤트를 발생시킨 바로 그 월드를 캡처해 BeginPlay 때 사용한다(공유 멤버 미사용).
+	// AddWeakLambda: 이 서브시스템이 파괴되면 자동 해제된다.
+	TWeakObjectPtr<UWorld> WeakWorld(World);
+	World->OnWorldBeginPlay.AddWeakLambda(this, [this, WeakWorld]()
+	{
+		if (UWorld* BegunWorld = WeakWorld.Get())
+		{
+			ShowAuthWidget(BegunWorld);
+		}
+	});
 }
 
-void UAuthSubsystem::HandleWorldBeginPlay()
+void UAuthSubsystem::ShowAuthWidget(UWorld* World)
 {
-	UWorld* World = PendingWorld.Get();
 	if (!World) { return; }
 	if (AuthWidget.IsValid()) { return; } // 중복 생성 방지
 

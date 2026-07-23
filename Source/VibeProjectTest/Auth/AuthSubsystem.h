@@ -46,11 +46,10 @@ private:
 
 	/** 게임 월드 액터 초기화 시점을 잡아 그 월드의 BeginPlay 구독으로 넘긴다. */
 	void HandleActorsInitialized(const FActorsInitializedParams& Params);
-	/** 월드 BeginPlay 시점에 Auth 위젯을 생성해 뷰포트에 올린다. */
-	void HandleWorldBeginPlay();
+	/** 해당 월드의 BeginPlay 시점에 Auth 위젯을 생성해 뷰포트에 올린다. */
+	void ShowAuthWidget(UWorld* World);
 
 	FDelegateHandle ActorsInitHandle;
-	TWeakObjectPtr<UWorld> PendingWorld;
 	TWeakObjectPtr<class UUserWidget> AuthWidget;
 
 	//Ubuntu IP
